@@ -1,0 +1,656 @@
+---
+title: "Project - Explore and Summarize Data"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+###HR ANALYTICS by Coslovich Simone
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+library(ggplot2)
+library(dplyr)
+library(GGally)
+library(gridExtra)
+library(reshape2)
+library(knitr)
+library(scales)
+```
+#### Introduction
+In this project i decide to get an exploration of the dataset "Human Resources Analytics" finded on Kaggle (<https://www.kaggle.com/ludobenistant/hr-analytics>). My purpose isn't to predict the next employee that leaves, but only understand what are the main causes of the employees leaving. 
+```{r echo=FALSE, Load_the_Data}
+hr <- read.csv(file = "/Users/SimoneCoslovich/Downloads/HR_comma_sep.csv",
+               sep = ",")
+```
+First, i started with a preliminary exploration of the dataset and its variables.
+
+#### Univariate Plots Section
+This dataset is composed by 10 variables that i'm going to explore in the next line.
+
+```{r echo=FALSE}
+str(hr)
+```
+<br><br> 
+Whit this visualization of the data, we can see that there are two numeric variables, satisfaction_level and last_evaluation; these two are scores from 0 to 1, with 0 the worst score and 1 the best score.  
+After that we see two factor variables: sales and salary; this two are category variables related to the salary (low, medium and high) and the department of the employee.  
+The other six variables are integer related to the years spent in the company, the average monthly hours, the number of projects (from 2 to 7), if the employee have a work accident (0 = NO, 1 = YES), if the employee has left the company (0 = NO, 1 = YES) and if the employee has a promotion in the last 5 years (0 = NO, 1 = YES).  
+<br><br>
+
+Now i'm going to explore every variable with a plot and a summary. I started with the satisfaction_level.
+<br><br>
+```{r echo=FALSE, Satisfaction_level}
+ggplot(data = hr, aes(x = satisfaction_level, y = ..count..))+
+  geom_density( fill = "#4271AE", colour = "#1F3552",
+                     alpha = 0.6)+
+  scale_x_continuous(breaks = seq(0,1,0.1))+
+  theme_bw()+
+  ggtitle("Number of employees for every satisfaction level")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Satisfaction Level", y = "Number of employees")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+summary(hr$satisfaction_level)
+```
+<br><br>
+In this graph we can notice that the density of the satisfation has a bimodal distribution, with two peaks, the first around 0.12 and the second around 0.76. In Bivariate and Multiavariate plots section i'm going to analyze this two peaks in order to find the causes and the effects of this distribution. With the summary, instead, seems to have a normal distribution with a median value of 0.644.  
+The second variable that i want to analyze is the last evaluation.
+<br><br>
+```{r echo=FALSE, Last_evaluation}
+ggplot(data = hr, aes(x = last_evaluation, y = ..count..))+
+  geom_density( fill = "#4271AE", colour = "#1F3552",
+                     alpha = 0.6)+
+  scale_x_continuous(breaks = seq(0,1,0.1))+
+  theme_bw()+
+  ggtitle("Number of employees for every evaluation score")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Last evaluation score", y = "Number of employees")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+summary(hr$last_evaluation)
+```
+<br><br>
+Like the satisfaction level's graph, the last evaluation's graph has a bimodal distribution with a peak around 0.53 and another peak around 0.86. Before generate this graph, i thought that the last_evaluation distribution was a normal distribution with a peak around 0.7 and two decreasing tails for excellent and worst employees. The summary in this case, don't describe correctly the visualization distribution and may lead to an incorrect analysis.
+<br><br>
+The third variable that i want to analyze is number of project. This time i prefer the histogram to a density chart.
+<br><br>
+```{r echo=FALSE, number_of_project}
+ggplot(data = hr, aes(x = number_project, y = ..count..))+
+  geom_bar(fill = "#4271AE", colour = "#1F3552",
+                     alpha = 0.6)+
+  scale_x_continuous(breaks= seq(0,7,1))+
+  theme_bw()+
+  ggtitle("Number of employees for every number of projects")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Number of projects", y = "Number of employees")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica", face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+summary(hr$number_project)
+```
+<br><br>
+This graph has a distribuiton that is similar with i thought before this visualization; there is a peak in 3 and 4 number of projects for every employee, a long right tail on the right (the number of employees with number projects over 5 are very small) and a short left tail. This graph has a positive skew distribution. With this variable, the visualization fits perfectly the summary.
+<br><br>
+The fourth variable is the average monthly hours
+<br><br>
+```{r echo=FALSE, average_montly_hours}
+ggplot(data = hr, aes(x = average_montly_hours, y = ..count..))+
+  geom_density(fill = "#4271AE", colour = "#1F3552",
+                     alpha = 0.6)+
+  theme_bw()+
+  ggtitle("Number of hours spent monthly for work")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Average monthly hours", y = "Number of employees")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+summary(hr$average_montly_hours)
+```
+<br><br>
+Like the first two variables, this variable as a bimodal distribution with two peaks, one in 150 and one around 270. This monthly hours is probably connected with the number of projects, but i'll analyze if there is a correlation in the Bivariate plot section.
+<br><br>
+The next variable is the time spent in the company.
+<br><br>
+```{r echo=FALSE, time_spend_company}
+ggplot(data = hr, aes(x = time_spend_company, y = ..count..))+
+  geom_bar(fill = "#4271AE", colour = "#1F3552",
+                     alpha = 0.6)+
+  scale_x_continuous(breaks= seq(0,10,1))+
+  theme_bw()+
+  ggtitle("Years in company")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Years", y = "Number of employees")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+summary(hr$time_spend_company)
+```
+<br><br>
+This plot is quite interesting because it gives me a vision of the distribution of the years in company; this distribution could hypoteticaly tells me that there are a lot of people that leaves after 3 years in comapmny or the company analyzed has hired the mojority of the employee from 4 to 2 years ago. I'll nalye the first hypotesis in the Bivariate plot section, but the secon hypotesis, isn't possible to analyze because we don't have the year of hiring to better understand this results.
+<br><br>
+I'll represent the next three variables (work accident, left and promotion last 5 years ) in one grid.
+<br><br>
+```{r echo=FALSE, boolean_variables}
+plot1 <-ggplot(data = hr, aes(x = factor(Work_accident), y = ..count..))+
+  geom_bar(fill = "#4271AE", colour = "#1F3552",
+                     alpha = 0.6)+
+  theme_bw()+
+  stat_count(aes(label = paste(round(prop.table(..count..) * 100)
+                               , "%", sep = "")),
+               vjust = 2, geom = "text", position = "identity") +
+  ggtitle("Work accident")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "No/Yes", y = "Number of employees")+
+  theme(plot.title = element_text(size = 12, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+plot2 <-ggplot(data = hr, aes(x = factor(left), y = ..count..))+
+  geom_bar(fill = "#4271AE", colour = "#1F3552",
+                     alpha = 0.6)+
+  stat_count(aes(label = paste(round(prop.table(..count..) * 100)
+                               , "%", sep = "")),
+               vjust = 2, geom = "text", position = "identity") +
+  theme_bw()+
+  ggtitle("Left")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "No/Yes", y = "Number of employees")+
+  theme(plot.title = element_text(size = 12, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+plot3 <-ggplot(data = hr, aes(x = factor(promotion_last_5years), y = ..count..))+
+  geom_bar(fill = "#4271AE", colour = "#1F3552",
+                     alpha = 0.6)+
+  stat_count(aes(label = paste(round(prop.table(..count..) * 100),
+                               "%", sep = "")),
+               vjust = 2, geom = "text", position = "identity") +
+  theme_bw()+
+  ggtitle("Promotion last 5 years")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "No/Yes", y = "Number of employees")+
+  theme(plot.title = element_text(size = 12, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+grid.arrange(plot1, plot2, plot3,nrow = 1)
+```
+<br><br>
+In the first plot (Work accident), we can notice that in this company the number of employees with accident is above the 14% of the entire number and in the bivariate plots section i'll going to analyze the department with the higher number and if it's correlated with the leaves.  
+The secon plot (Left), describe the flow of leaves (1 employee on 4 leaves the company) and with this EDA i want to understand better the causes for the employee's leaves.  
+Last but not least, the plot for the promotions. This plot describe a situation with a little percent of the employees with a promotion in the last 5 years and I want to explore if this variable is correlated with the leaves.
+<br><br>
+The last two variables are two categorical variables: sales and salary. Sales describe the departments in the company and salary, the salary of the  employees.
+<br><br>
+```{r echo=FALSE, categorical_variables}
+hr$salary2 <- factor(hr$salary, levels = c("low", "medium", "high"))
+
+plot4 <-ggplot(data = hr, aes(x = sales, y = ..count.., fill = sales))+
+  geom_bar(colour = "#1F3552",
+                     alpha = 0.6)+
+  theme_bw()+
+  theme(legend.title=element_blank())+
+  stat_count(aes(label = paste(round(prop.table(..count..) * 100)
+                               , "%", sep = "")),
+               vjust = 2, geom = "text", position = "identity") +
+  ggtitle("Sales")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Department", y = "Number of employees")+
+  theme(plot.title = element_text(size = 12, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+plot5 <-ggplot(data = hr, aes(x = salary2, y = ..count.., fill= salary2))+
+  geom_bar(colour = "#1F3552",
+                     alpha = 0.6)+
+  stat_count(aes(label = paste(round(prop.table(..count..) * 100)
+                               , "%", sep = "")),
+               vjust = 2, geom = "text", position = "identity") +
+  theme_bw()+
+  theme(legend.title=element_blank())+
+  ggtitle("Salaries")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Salary", y = "Number of employees")+
+  theme(plot.title = element_text(size = 12, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+grid.arrange(plot4, plot5,ncol = 1, heights=c(20, 20))
+```
+
+<br><br>
+In this two graph we simply notice that there are departments with an elevate number of employees like sales, support and techincal, and that the salary in thie company are principally low and medium.
+<br><br>
+
+#### Univariate Analysis Section
+In this dataset, my goal is to understand the causes of the employees left, what are the charateristics of the employee that leaves; i think that the features that help me to reach my goal are surely the satisfaction level, the last evaluation and the ratio from average montly hours and the number of projects.  So, before try to investigate better, i create a new variable that is the ratio between the average_montly_hours and the number_projects.
+<br><br>
+```{r echo=TRUE}
+hr$ratio_hours_projects <- round(hr$average_montly_hours/hr$number_project,2)
+```
+<br><br>
+
+#### Bivariate Plots Section  
+Before starting the bivariate plots section, i want to investigate what are the variable with the best or the worst correlation. So i put the data set in a heatmap. 
+<br><br>
+
+```{r echo=FALSE}
+#Reorder the dataset to isolate at the last position the categorical varibales
+hr <- hr[,c(1,2,3,4,5,6,7,8,12,9,10,11)]
+
+#Select only the Factor and integer column and create a matrix correlation
+HR_correlation <- hr %>% select(satisfaction_level:ratio_hours_projects)
+cormat <- round(cor(HR_correlation),2)
+
+#create a fuction that gives the lower triangle of the cormat
+get_lower_tri <- function(cormat){
+  cormat[upper.tri(cormat)]<- NA
+  return(cormat)
+}
+
+lower_tri <- get_lower_tri(cormat)
+
+#melt the correlation matrix and create the first plot
+melted_cormat <- melt(lower_tri, na.rm = TRUE)
+
+#reordering the cormat and recreat the lower triangle and the melted data
+reorder_cormat <- function(cormat){
+  # Use correlation between variables as distance
+  dd <- as.dist((1-cormat)/2)
+  hc <- hclust(dd)
+  cormat <-cormat[hc$order, hc$order]
+}
+
+cormat <- reorder_cormat(cormat)
+lower_tri <- get_lower_tri(cormat)
+
+melted_cormat <- melt(lower_tri, na.rm = TRUE)
+
+#Create the first heatmap
+ggheatmap <- ggplot(aes(x = Var1, y = Var2, fill = value),
+       data = melted_cormat) +
+  geom_tile(color = "white")+
+  scale_fill_gradient2(low = "darkred", mid = "white", high = "darkgreen", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab", 
+                       name="Pearson\nCorrelation") +
+  theme_minimal()+ # minimal theme
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1))+
+  coord_fixed()
+
+#adjust the labels and the visualization
+ggheatmap + 
+  geom_text(aes(Var1, Var2, label = value), color = "black", size = 4) +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.border = element_blank(),
+    panel.background = element_blank(),
+    axis.ticks = element_blank(),
+    legend.justification = c(1, 0),
+    legend.position = c(0.6, 0.7),
+    legend.direction = "horizontal")+
+  guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
+                               title.position = "top", title.hjust = 0.5))
+
+
+```
+<br><br>
+With this heatmap, we can notice quickly the variables with the most considerable correlation; I starting analyze the first two correated varibales: the last evaluation and the number of projecs.
+<br><br>
+```{r echo=FALSE, evaluation_vs_project}
+ggplot(data = hr, aes(x = factor(number_project), y = last_evaluation, fill =factor(number_project) ))+
+  geom_boxplot( colour = "#1F3552",
+                     alpha = 0.6)+
+  geom_hline(yintercept = mean(hr$last_evaluation), color='red')+
+  theme_bw()+
+  scale_fill_discrete(name = "Number of project")+
+  ggtitle("Last evaluation level for number of projects")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Number of projects", y = "Last evaluation level")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+```
+<br><br>
+
+In this plot we can notice that the median value of the last evaluation level, increase with the increasing of the number of projects. Probably the evaluator give a better score for the hard workers that are on the higher number of projects. In red i decide to represent the mean value of the las evaluation level.  
+The second plot that i want to create is the last evaluation for the average montly hours. 
+<br><br>
+```{r echo=FALSE, evaluation_vs_hours}
+ggplot(data = hr, aes(x = average_montly_hours, y = last_evaluation))+
+  geom_jitter(fill = "#4271AE", colour = "#1F3552",
+                     alpha = 0.05)+
+  theme_bw()+
+  geom_hline(yintercept = mean(hr$last_evaluation), color='red')+
+  ggtitle("Last evaluation level for average montly hours")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Average montly hours", y = "Last evaluation level")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+```
+<br><br>
+
+In this plot we can notice an huge amount of data in the left low corner that represent the low evaluation level correlated to the low amount of hours, and an huge amount of data in the top right corner that represent the high evaluation level correlated to the high amount of hours. The other data are very scattered, so with this type of plot che can't notice a pattern for the value between this two cluster. In red i decide to represent the mean value of the las evaluation level.  
+The third plot that i want to analyze is the correlation between the number of projects and the the average montly hours. 
+<br><br>
+```{r echo=FALSE, hours_vs_project}
+ggplot(data = hr, aes(x = factor(number_project), y = average_montly_hours, fill = factor(number_project)))+
+  geom_boxplot(colour = "#1F3552",
+                     alpha = 0.6)+
+  theme_bw()+
+  scale_fill_discrete(name = "Number of project")+
+  geom_hline(yintercept = mean(hr$average_montly_hours), color='red')+
+  ggtitle("Average montly hours for numebr of projects")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Number of projects", y = "Average montly hours")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+```
+<br><br>
+As i can expect, the number of hours for employees is strictly correlated with the number of projects, especially for the employees with 2,6 and 7 projects. The mean of average montly hours of projects higher than 4 are above the mean value of the mtotal data montly hours. In the Multiavrite plots section i'll analyze this two variables above, with a third variable: left.  
+And because my purpose is try to understand the cause for the left, now i'm going to plot the variable left, with the variables that had the best correlation.
+<br><br>
+```{r echo=FALSE, left_vs_satisfaction}
+ggplot(data = hr, aes(x = factor(left), y = satisfaction_level))+
+  geom_boxplot(fill = "#4271AE", colour = "#1F3552",
+                     alpha = 0.6)+
+  theme_bw()+
+  ggtitle("Satisfaction level for left")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Left", y = "Satisfaction level")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+
+ggplot(data = hr, aes(x = factor(left), y = satisfaction_level))+
+  geom_jitter(fill = "#4271AE", colour = "#1F3552",
+                     alpha = 0.1)+
+  theme_bw()+
+  ggtitle("Satisfaction level for left")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Left", y = "Satisfaction level")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+```
+<br><br>
+The first compare is the satisfaction level with the left of an employee (0 = No, 1 = Yes). This scatter plot is more readable tha a box plot, because in the totality of the data in the boxplots, we don't notice if there are some pattns. In the scatter plot, instead, we can notice that the people who stay in the company have a medium/high Satisfaction level, while the people who leaves the company, can be classified in 3 classes: the first classes are the employee with a low satisfaction level that probably change company in order to find a company that stimulate 
+they in a better way; the second class is composed with the people under the 0.5 in the satisfaction level and the third class composed by the employee wih an high satisfaction level (this might be the employee that left beacause they want to pursue a growth career in other company).  
+Another varibales that i want to compare are the left variables and the work accident.
+<br><br>
+```{r echo=FALSE, left_vs_accident}
+
+ggplot(data = hr, aes(x = factor(left), y = factor(Work_accident)))+
+  geom_jitter(fill = "#4271AE", colour = "#1F3552",
+                     alpha = 0.1)+
+  theme_bw()+
+  ggtitle("Work accident on left")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Left", y = "Work accident")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+```
+<br><br>
+In this plot we can notice that the people don't left the company because they have an accident; there are few points in the top right box that tell us this isn't the way to bettere understand the causes of the leaves.  
+So the next two variables are left and time spent on company.
+<br><br>
+```{r echo=FALSE, time_spend_company_vs_left}
+ggplot(data = hr, aes(x = time_spend_company, y =..count..))+
+  geom_bar(aes(fill = factor(left)), position = "fill")+
+  scale_y_continuous(labels = scales::percent)+
+  scale_x_continuous(breaks= seq(0,10,1))+
+  theme_bw()+
+  ggtitle("Years in company")+
+  scale_fill_discrete(name = "Left")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Years", y = "% of left vs years in company")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+```
+<br><br>
+In this plot we can notice that the left is not strictly correlated with the years in company. The higher percentage of employee that leaves the company are the people that work for this company for 4, 5 and 6 years.  
+Other two similar plot i want to analyze are the left/salary plot and the left/sales plot.
+<br><br>
+```{r echo=FALSE}
+plot6 <- ggplot(data = hr, aes(x = salary2))+
+  geom_bar(aes(fill = factor(left)), position = "fill")+
+  scale_y_continuous(labels = scales::percent)+
+  theme_bw()+
+  scale_fill_discrete(name = "Left")+
+  ggtitle("Salary vs left")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Salary", y = "% of left vs stay")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+plot7 <- ggplot(data = hr, aes(x = sales))+
+  geom_bar(aes(fill = factor(left)), position = "fill")+
+  scale_y_continuous(labels = scales::percent)+
+  theme_bw()+
+  scale_fill_discrete(name = "Left")+
+  ggtitle("Sales vs left")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Sales", y = "% of left vs stay")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+grid.arrange(plot6,plot7, ncol=1)
+```
+<br><br>
+In this two plots I don't want to understand how many employees left for every salary groups or department, but the percentage of the employees that leave. In the salary plot, the employye that leave more freqeuntly than the others are the low salary's employees, followed by the medium salary's and the high salary's. In Multivariate plots section i'll analyze this ratio with another variable: the satisfaction level, that is highly correlated with the leaves.  
+In the second plot, sales vs left, we can see that the percentage of employee that leave the company is the same value for most of the department, with the exception of management and RandD.
+<br><br>
+#### Bivariate Analysis Section
+In this plot's section i analyze principally the left variable compared with other variable. As we can see the left variable is strictly correlated with satisfatcion level and lower is the level of satisfaction, higher is the number of people that left the company.  
+The last evaluation level, instead, is correlated with the number of projects (if number of projects is higher, than the last evaluation score is higher) and the average montly hours (the hard workers are awarded with a high last evaluation score).  
+Before this analysis i thought that the employees that has left the company were the employees with a work accident in their career, but i was totally wrong.  
+The strong relationship that I found is the satisfation level correlated with left.
+<br><br>
+
+#### Multivariate Plots Section
+In this section i want create and analyze four plots that i think describe very much this dataset.  
+The first that i want to create is the last evaluation on number of projects with the left variable.
+<br><br>
+```{r echo=FALSE, evaluation_vs_project_vs_left}
+ggplot(data = hr, aes(x = factor(number_project), y = last_evaluation, fill =factor(number_project) ))+
+  geom_boxplot( colour = "#1F3552",
+                     alpha = 0.6)+
+  geom_hline(yintercept = mean(hr$last_evaluation), color='red')+
+  theme_bw()+
+  scale_fill_discrete(name = "Number of project")+
+  ggtitle("Left on Last evaluation level for number of projects")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Number of projects", y = "Last evaluation level")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))+
+  facet_wrap(~left, ncol = 2)
+
+```
+<br><br>
+Wow, with this two plots i better understand the left correlated with the last evaluation and the number of project. The employee with an high number of projects and high evaluation score tend to leave the company, probably for an advance in their career, especially the employees with 7 projects on their hands (they all leaving the company). In the opposite the employee with a low evaluation score and a low number of projects tend to leave the company, probably for a new job that better enhance their skills.  Instead, the employee that stay in company, have pretty the same evaluation level even they have differetn number of projects in their hands.  
+Another plot that i want to visualize is the average montly hour on number of projects with the left variable.
+<br><br>
+```{r echo=FALSE, hours_vs_project_vs_left}
+ggplot(data = hr, aes(x = factor(number_project), y = average_montly_hours, fill = factor(number_project)))+
+  geom_boxplot(colour = "#1F3552",
+                     alpha = 0.6)+
+  theme_bw()+
+  scale_fill_discrete(name = "Number of project")+
+  geom_hline(yintercept = mean(hr$average_montly_hours), color='red')+
+  ggtitle("Left on average montly hours for number of projects")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Number of projects", y = "Average montly hours")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))+
+  facet_wrap(~left, ncol = 2)
+
+```
+<br><br>
+With this plot we can notice that had workers, with an high number of average hours, tend to leave the company and the same for the people that are less engaged. Instead, the employees that stay in company, have around the same montly hours.  
+Another plot that I analyze in this section is the satisfaction level on last evaluation level with the left variable.
+<br><br>
+```{r echo=FALSE, satisfaction_vs_evaluation_vs_left}
+ggplot(data = hr, aes(x = satisfaction_level, y = last_evaluation, color = factor(left)))+
+  geom_jitter(alpha = 0.5)+
+  theme_bw()+
+  ggtitle("Left on satisfaction level for last evaluation level")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Satisfaction level", y = "Last evaluation level")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+```
+<br><br>
+In this plot we can notice that there are three types of people that leave the company: the first one are the employee that have an high evaluation score with a low satisfaction level, the second are the employee that have a low evaluation level and a low satisfaction level and the third one are the employee with an high satisfaction level and an high evaluation level.  
+But this plot doesn't explain the causes of the left, so I try to understand if there is a main cause that force the employee to leave. So the two variables that i want to plot are: salary and the number of project.  
+Frist i start putting the number of project in the previuos plot.
+<br><br>
+```{r echo=FALSE, satisfaction_vs_evaluation_vs_left_vs_numproj}
+ggplot(data = hr, aes(x = satisfaction_level, y = last_evaluation, color = factor(left)))+
+  geom_jitter(alpha = 0.5)+
+  theme_bw()+
+  ggtitle("Left on satisfaction level for last evaluation level for number of project")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Satisfaction level", y = "Last evaluation level")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))+
+  facet_wrap(~number_project, ncol= 2, nrow = 3)
+
+```
+<br><br>
+In this plot we can see a larger picutre of the situation. The people leaving with the less number of project, two, have a low satisfaction level and a low evaluation level. In the employee that follow three project there are only few data of people who left and without a specific pattern. For the empoloyee with four and five projects, the people who left the company have an hogh satisfaction level and an high evaluation level. Last but not least, the employye with ix or seven projects that left have a low satisfaction level, nut an high last evaluation level.  
+The number of project could be an interesting variable to better understand the future left. Another cause that i want to try to understand is how much salary change satisfaction level and consequently the leave of the company.
+<br><br>
+
+```{r echo=FALSE, satisfaction_vs_evaluation_vs_left_vs_salary}
+ggplot(data = hr, aes(x = satisfaction_level, y = last_evaluation, color = factor(left)))+
+  geom_jitter(alpha = 0.5)+
+  theme_bw()+
+  ggtitle("Left on satisfaction level for last evaluation level for salary")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Satisfaction level", y = "Last evaluation level")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))+
+  facet_wrap(~salary2, ncol= 2, nrow = 2)
+
+
+```
+<br><br>
+In this case, the plot don't explain anything and this isn't a great choice to understand the left of the people.
+<br><br>
+
+#### Final plot and analytics
+In this section i choose three of the previous plot to better explain how this EDA is useful for me.
+<br><br>
+
+##### Plot One
+The first plot that I want to explain is the left variable pn average montly hours for number of projects
+<br><br>
+
+```{r echo=FALSE, Plot_One}
+ggplot(data = hr, aes(x = factor(number_project), y = average_montly_hours, fill = factor(number_project)))+
+  geom_boxplot(colour = "#1F3552",
+                     alpha = 0.6)+
+  theme_bw()+
+  scale_fill_discrete(name = "Number of project")+
+  geom_hline(yintercept = mean(hr$average_montly_hours), color='red')+
+  ggtitle("Left on average montly hours for number of projects")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Number of projects", y = "Average montly hours")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))+
+  facet_wrap(~left, ncol = 2)
+
+```
+<br><br>
+In this plot we can see that the people who stay in the company, have similar average montly hours independently of he number of porjects. This people probably doing the job well, but not perfectly. Instead the peole who left the company, for the same number of projects are hard worker and spend more time on the projects probably to do better; there is only one exception, because the people that have left the company with two projects, are not good workers, with time spent montly very above of the average montly hours.
+In this plot we can suppose that the people with an hard work ethic, probably in the future will leave their job in order to search an advance in theri careers.
+<br><br>
+
+##### Plot Two
+The second plot that I want to explain is the left variable on the years spent in the company
+<br><br>
+```{r echo=FALSE, Plot_Two}
+ggplot(data = hr, aes(x = time_spend_company, y =..count..))+
+  geom_bar(aes(fill = factor(left)), position = "fill")+
+  scale_y_continuous(labels = scales::percent)+
+  scale_x_continuous(breaks= seq(0,10,1))+
+  theme_bw()+
+  ggtitle("Years in company")+
+  scale_fill_discrete(name = "Left")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Years", y = "% of left vs years in company")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))
+
+```
+<br><br>
+Whit this second plot the first thing that we can notice is the normal distribution of the percentage of left for every years spent in company. There is a peak in the percentage of emloyees that are in the company from five years.  
+So there is an high percentage of left for employees that are in the company from five years, (above 50%); so for the employee from 3 to 6 years in the company this is the best period to leave the company. From 7 to 10 years, none leave the company, probably for the attachement and lack of ambition.
+<br><br>
+
+##### Plot Three
+The third plot that I want to explain is the left variable in the comparison of satisfaction level and the last evaluation level fro every number of projects.
+<br><br>
+```{r echo=FALSE, Plot_Three}
+ggplot(data = hr, aes(x = satisfaction_level, y = last_evaluation, color = factor(left)))+
+  geom_jitter(alpha = 0.5)+
+  theme_bw()+
+  ggtitle("Left on satisfaction level for last evaluation level for number of project")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Satisfaction level", y = "Last evaluation level")+
+  theme(plot.title = element_text(size = 13, family = "Helvetica",
+                                  face = "bold"),
+              text = element_text(size = 10, family = "Helvetica"))+
+  facet_wrap(~number_project, ncol= 2, nrow = 3)
+```
+<br><br>
+In these plots we can notice that the employees that leave with a number of projects in their hands equal to two, havea low satisfaction level and a low last evaluation level, probably beacuase the are not good wrokers and their are less engaged than the others employees.  Instead, there is a very low number of employees that leave the company with three projects in their hands.  The workers that leave the company, with four and five number of projects, have an high satisfaction level and an high evaluation level; probably they are changing theri job to advance in their career.  In the last, the workers that leave with an high number of projects (6 or 7) have an high evaluation level, because are good workers, but a very low satisfaction level, probably because they are overwhelmed by the job; The only workers that have 7 projects on their hand, all leave the company.  
+These plots help me to better understand what are the causes of a low satisfaction level and consequently the left of the company.
+
+
+#### Reflection
+In conclusion in this EDA, the struggles that i went through are to understand what are the variables that better help me to understand why the employees leave the company, choose the good plots and chose the right comparison of variables.  
+In this EDA went well the finding of a correlation beacuase most of the variables are correlated and very good to visualize.  
+It's surpising that the salary isn't a cause of the left from the company, but only how an employee are engaged in his work.  
+In the future with this dataset can be done a machine learning predictive analysis to better understand how an employee are on risk to leaves the company or, only if it is created a new variable for skill's level of the employee, a model to better engage the employee with a correct numbers of projects.
+<br><br>
+
+#### Resources
+N/A
+
+
+
+
+
+
+
+
